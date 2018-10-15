@@ -19,9 +19,9 @@ exports.handler = async function (args) {
 
   switch (command) {
     case 'db:create':
-      await sequelize.query(`CREATE DATABASE ${sequelize.getQueryInterface().quoteIdentifier(config.database)}`, {
-        type: sequelize.QueryTypes.RAW
-      }).catch(e => helpers.view.error(e));
+      await sequelize.getQueryInterface()
+        .createDatabase(config.database, config.dialectOptions || {})
+        .catch(e => helpers.view.error(e));
 
       helpers.view.log(
         'Database',
@@ -30,10 +30,10 @@ exports.handler = async function (args) {
       );
 
       break;
-    case 'db:drop':
-      await sequelize.query(`DROP DATABASE ${sequelize.getQueryInterface().quoteIdentifier(config.database)}`, {
-        type: sequelize.QueryTypes.RAW
-      }).catch(e => helpers.view.error(e));
+    case 'db:drop':    
+      await sequelize.getQueryInterface()
+        .dropDatabase(config.database)
+        .catch(e => helpers.view.error(e));
 
       helpers.view.log(
         'Database',
