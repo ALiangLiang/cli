@@ -21,7 +21,7 @@ const prepare = function (flag, callback, options) {
     .pipe(helpers.teardown(callback));
 };
 
-describe(Support.getTestDialectTeaser('db:create'), () => {
+describe.only(Support.getTestDialectTeaser('db:create'), () => {
   if (Support.dialectIsPostgres()) {
     it('correctly creates database', function (done) {
       const databaseName = `my_test_db_${_.random(10000, 99999)}`;
@@ -55,6 +55,68 @@ describe(Support.getTestDialectTeaser('db:create'), () => {
         }, {
           config: {
             database: databaseName
+          }
+        });
+    });
+
+    it('correctly creates database with encoding, collate and template', function (done) {
+      const databaseName = `my_test_db_${_.random(10000, 99999)}`;
+      prepare(
+        'db:create',
+        () => {
+          this.sequelize.query(`SELECT
+            1 as exists,
+            pg_encoding_to_char(encoding) as encoding,
+            datcollate as collate,
+            datctype as ctype
+            FROM pg_database WHERE datname = '${databaseName}';`, {
+            type: this.sequelize.QueryTypes.SELECT
+          }).then(result => {
+            expect(result[0].exists).to.eql(1);
+            expect(result[0].encoding).to.eql('UTF8');
+            expect(result[0].collate).to.eql('zh_TW.UTF-8');
+            expect(result[0].ctype).to.eql('en_US.utf8');
+            done();
+          });
+        }, {
+          config: {
+            database: databaseName,
+            dialectOptions: {
+              encoding: 'UTF8',
+              collate: 'zh_TW.UTF-8',
+              template: 'template0' // required when set collate
+            }
+          }
+        });
+    });
+
+    it('correctly creates database with encoding, ctype and template', function (done) {
+      const databaseName = `my_test_db_${_.random(10000, 99999)}`;
+      prepare(
+        'db:create',
+        () => {
+          this.sequelize.query(`SELECT
+            1 as exists,
+            pg_encoding_to_char(encoding) as encoding,
+            datcollate as collate,
+            datctype as ctype
+            FROM pg_database WHERE datname = '${databaseName}';`, {
+            type: this.sequelize.QueryTypes.SELECT
+          }).then(result => {
+            expect(result[0].exists).to.eql(1);
+            expect(result[0].encoding).to.eql('UTF8');
+            expect(result[0].collate).to.eql('en_US.utf8');
+            expect(result[0].ctype).to.eql('zh_TW.UTF-8');
+            done();
+          });
+        }, {
+          config: {
+            database: databaseName,
+            dialectOptions: {
+              encoding: 'UTF8',
+              ctype: 'zh_TW.UTF-8',
+              template: 'template0' // required when set collate
+            }
           }
         });
     });
@@ -93,6 +155,57 @@ describe(Support.getTestDialectTeaser('db:create'), () => {
         }, {
           config: {
             database: databaseName
+          }
+        });
+    });
+
+    it('correctly creates database with charset', function (done) {
+      const databaseName = `my_test_db_${_.random(10000, 99999)}`;
+      prepare(
+        'db:create',
+        () => {
+          this.sequelize.query(`SELECT
+            DEFAULT_CHARACTER_SET_NAME as charset,
+            DEFAULT_COLLATION_NAME as collation
+            FROM information_schema.SCHEMATA WHERE schema_name = '${databaseName}';`, {
+            type: this.sequelize.QueryTypes.SELECT
+          }).then(result => {
+            expect(result[0].charset).to.eql('utf8mb4');
+            expect(result[0].collation).to.eql('utf8mb4_general_ci');
+            done();
+          });
+        }, {
+          config: {
+            database: databaseName,
+            dialectOptions: {
+              charset: 'utf8mb4'
+            }
+          }
+        });
+    });
+
+    it('correctly creates database with charset and collation', function (done) {
+      const databaseName = `my_test_db_${_.random(10000, 99999)}`;
+      prepare(
+        'db:create',
+        () => {
+          this.sequelize.query(`SELECT
+            DEFAULT_CHARACTER_SET_NAME as charset,
+            DEFAULT_COLLATION_NAME as collation
+            FROM information_schema.SCHEMATA WHERE schema_name = '${databaseName}';`, {
+            type: this.sequelize.QueryTypes.SELECT
+          }).then(result => {
+            expect(result[0].charset).to.eql('utf8mb4');
+            expect(result[0].collation).to.eql('utf8mb4_unicode_ci');
+            done();
+          });
+        }, {
+          config: {
+            database: databaseName,
+            dialectOptions: {
+              charset: 'utf8mb4',
+              collate: 'utf8mb4_unicode_ci'
+            }
           }
         });
     });
